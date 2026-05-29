@@ -43,6 +43,8 @@ void save_dendrogram(const std::vector<MergeEvent> &dg,
     file << e.cl1 << ',' << e.cl2 << ',' << e.dist << ',' << e.new_size << '\n';
 }
 
+// ─────────────────────────────────────────────────────────────────────
+
 // Euclidean distance between two points. Same as in the heap version; kept
 // local (static) so the two translation units don't clash at link time.
 static double euclidean(const std::vector<double> &a,
@@ -56,19 +58,19 @@ static double euclidean(const std::vector<double> &a,
   return std::sqrt(sum);
 }
 
+// ─────────────────────────────────────────────────────────────────────
+
 std::vector<MergeEvent>
 hac_average_link_matrix(const std::vector<std::vector<double>> &data) {
 
-  const int N = static_cast<int>(data.size());
+  const int N = data.size();
   if (N < 2)
     throw std::invalid_argument("Need at least 2 data points.");
 
   // Cluster ids: leaves 0..N-1, merged clusters N..2N-2.
   const int MAX_ID = 2 * N;
 
-  // Distance matrix indexed by cluster id (symmetric). Rows/cols for
-  // not-yet-created clusters are written before they are read, so the
-  // initial zero-fill is fine.
+  // Distance matrix indexed by cluster id (symmetric).
   std::vector<std::vector<double>> D(MAX_ID, std::vector<double>(MAX_ID, 0.0));
 
   // Cluster sizes (number of original points in the cluster).
@@ -76,9 +78,7 @@ hac_average_link_matrix(const std::vector<std::vector<double>> &data) {
   for (int i = 0; i < N; ++i)
     sz[i] = 1;
 
-  // Active flag per cluster id. Using a flat vector<char> (rather than
-  // unordered_set<int>) so the find-min scan is a tight, cache-friendly
-  // linear pass — same layout the parallel versions will use.
+  // Active flag per cluster id.
   std::vector<char> active(MAX_ID, 0);
   for (int i = 0; i < N; ++i)
     active[i] = 1;
@@ -131,8 +131,8 @@ hac_average_link_matrix(const std::vector<std::vector<double>> &data) {
     for (int m = 0; m < k; ++m) {
       if (!active[m] || m == best_i || m == best_j)
         continue;
-      double d_km = (sz[best_i] * D[best_i][m] + sz[best_j] * D[best_j][m]) /
-                    static_cast<double>(sz[k]);
+      double d_km =
+          (sz[best_i] * D[best_i][m] + sz[best_j] * D[best_j][m]) / (sz[k]);
       D[k][m] = D[m][k] = d_km;
     }
 
