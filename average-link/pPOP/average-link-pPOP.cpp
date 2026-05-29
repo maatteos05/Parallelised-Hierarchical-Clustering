@@ -1,5 +1,6 @@
 #include "average-link-pPOP.hpp"
 
+#include <atomic>
 #include <cmath>
 #include <limits>
 #include <queue>
@@ -40,9 +41,9 @@ using MinHeap =
 // ─────────────────────────────────────────────────────────────────────────────
 
 // True if point (px, py) falls inside the cell boundary extended by delta.
-static bool in_cell(double px, double py, const Cell &cell, double delta) {
-  return px >= cell.x_min - delta && px <= cell.x_max + delta &&
-         py >= cell.y_min - delta && py <= cell.y_max + delta;
+static bool in_cell(double px, double py, const Cell &cell) {
+  return px >= cell.x_min && px <= cell.x_max && py >= cell.y_min &&
+         py <= cell.y_max;
 }
 
 // Euclidean distance between two points (any dimension).
@@ -68,7 +69,7 @@ static bool contains(const std::vector<int> &v, int val) {
 // Thread worker — scans a fixed chunk of cells [cell_begin, cell_end)
 // and finds the closest active pair within those cells.
 // ─────────────────────────────────────────────────────────────────────────────
-static void find_min_thread(int cell_begin, int cell_end,
+static void find_min_thread(std::atomic<int> &next_cell, int total_cells,
                             const std::vector<Cell> &cells,
                             const std::vector<char> &active,
                             const std::vector<std::vector<int>> &cluster_cells,
@@ -77,7 +78,8 @@ static void find_min_thread(int cell_begin, int cell_end,
   int local_i = -1;
   int local_j = -1;
 
-  for (int c = cell_begin; c < cell_end; c++) {
+  int c;
+  while ((c = next_cell.fetch_add(1)) < total_cells) {
     const std::vector<int> &ids = cells[c].cluster_ids;
     for (int ci : ids) {
       if (!active[ci])
@@ -181,17 +183,17 @@ hac_average_link_ppop(const std::vector<std::vector<double>> &data,
   for (int row = 0; row < n_cells_per_dim; row++) {
     for (int col = 0; col < n_cells_per_dim; col++) {
       int i = row * n_cells_per_dim + col;
-      cells[i].x_min = x_min + col * cell_w;
-      cells[i].x_max = x_min + (col + 1) * cell_w;
-      cells[i].y_min = y_min + row * cell_h;
-      cells[i].y_max = y_min + (row + 1) * cell_h;
+      cells[i].x_min = x_min + col * cell_w - delta / 2.0;
+      cells[i].x_max = x_min + (col + 1) * cell_w + delta / 2.0;
+      cells[i].y_min = y_min + row * cell_h - delta / 2.0;
+      cells[i].y_max = y_min + (row + 1) * cell_h + delta / 2.0;
     }
   }
 
   // Assign original points to cells ─────────────────────────────────────────
   for (int i = 0; i < N; i++) {
     for (int c = 0; c < total_cells; c++) {
-      if (in_cell(data[i][0], data[i][1], cells[c], delta)) {
+      if (in_cell(data[i][0], data[i][1], cells[c])) {
         cells[c].cluster_ids.push_back(i);
         cluster_cells[i].push_back(c);
       }
@@ -213,36 +215,28 @@ hac_average_link_ppop(const std::vector<std::vector<double>> &data,
 
   // ─────────────────────────────────────────────────────────────────────
   // Phase 1 — parallel find-min (heap tops) + parallel heap update
-  //
-  // Each iteration:
-  //   1. Threads split cells evenly, each finds local min via heap tops.
-  //   2. Main thread joins workers, picks global minimum.
-  //   3. Main thread merges and updates D (sequential, O(N)).
-  //   4. Threads split affected clusters, each updates their heaps.
-  //   5. Main thread builds pq[k] from scratch for new cluster k.
-  //   6. Repeat until global min >= delta.
   // ─────────────────────────────────────────────────────────────────────
 
   std::vector<MergeEvent> dendrogram;
   int next_id = N;
 
+  std::atomic<int> next_cell(0);
+
   while (true) {
 
     // ── Step 1: parallel find-min via heap tops ───────────────────────
-    int block_size = total_cells / n_threads;
+    next_cell.store(0);
 
     std::vector<LocalMin> results(n_threads);
     std::vector<std::thread> workers(n_threads - 1);
 
-    int start = 0;
     for (int t = 0; t < n_threads - 1; t++) {
-      int end = start + block_size;
-      workers[t] = std::thread(find_min_thread, start, end, std::ref(cells),
-                               std::ref(active), std::ref(cluster_cells),
-                               std::ref(pq), std::ref(results[t]));
-      start = end;
+      workers[t] = std::thread(find_min_thread, std::ref(next_cell),
+                               total_cells, std::ref(cells), std::ref(active),
+                               std::ref(cluster_cells), std::ref(pq),
+                               std::ref(results[t]));
     }
-    find_min_thread(start, total_cells, cells, active, cluster_cells, pq,
+    find_min_thread(next_cell, total_cells, cells, active, cluster_cells, pq,
                     results[n_threads - 1]);
 
     for (int t = 0; t < n_threads - 1; t++)
