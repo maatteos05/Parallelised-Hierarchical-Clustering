@@ -1,26 +1,47 @@
-#include "average-link-matrix-seq.hpp"
+#include "average-link-pPOP.hpp"
 #include <chrono>
 #include <iostream>
+#include <string>
 
 int main(int argc, char *argv[]) {
   if (argc < 3) {
-    std::cerr << "Usage: hac_seq <input.csv> <output.csv>\n";
+    std::cerr << "Usage: hac_ppop <input.csv> <output.csv> [n_threads] [n_cells_per_dim] [delta]\n";
+    std::cerr << "Defaults: n_threads=4, n_cells_per_dim=4, delta=0.5\n";
     return 1;
   }
 
   const std::string input_path = argv[1];
   const std::string output_path = argv[2];
 
+  int n_threads = 4;
+  if (argc >= 4) {
+    n_threads = std::stoi(argv[3]);
+  }
+
+  int n_cells_per_dim = 4;
+  if (argc >= 5) {
+    n_cells_per_dim = std::stoi(argv[4]);
+  }
+
+  double delta = 0.5;
+  if (argc >= 6) {
+    delta = std::stod(argv[5]);
+  }
+
   try {
     // ── Load data ─────────────────────────────────────────────────────
     auto data = load_csv(input_path);
     std::cout << "Loaded " << data.size() << " points"
               << " (dim=" << (data.empty() ? 0 : data[0].size()) << ")\n";
+    std::cout << "Running pPOP average-link with parameters:\n"
+              << "  n_threads       = " << n_threads << "\n"
+              << "  n_cells_per_dim = " << n_cells_per_dim << " (total cells = " << (n_cells_per_dim * n_cells_per_dim) << ")\n"
+              << "  delta           = " << delta << "\n";
 
-    // ── Run HAC ───────────────────────────────────────────────────────
+    // ── Run HAC pPOP ──────────────────────────────────────────────────
     auto t0 = std::chrono::high_resolution_clock::now();
 
-    auto dendrogram = hac_average_link_matrix(data);
+    auto dendrogram = hac_average_link_ppop(data, n_threads, n_cells_per_dim, delta);
 
     auto t1 = std::chrono::high_resolution_clock::now();
     double ms = std::chrono::duration<double, std::milli>(t1 - t0).count();

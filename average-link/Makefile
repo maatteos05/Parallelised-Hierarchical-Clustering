@@ -1,15 +1,31 @@
 CXX      = g++
 CXXFLAGS = -std=c++20 -O2 -Wall -Wextra
 
-TARGET = hac_seq
-SRCS   = sequential/main.cpp sequential/average-link-seq.cpp
+# --- Target binaries ---
+SEQ_TARGET  = hac_seq
+PPOP_TARGET = hac_ppop
 
-.PHONY: all clean
+# --- Source groups ---
+SEQ_SRCS    = sequential/main.cpp \
+              sequential/average-link-matrix-seq.cpp
 
-all: $(TARGET)
+PPOP_SRCS   = pPOP/main.cpp \
+              pPOP/average-link-pPOP.cpp \
+              sequential/average-link-matrix-seq.cpp
 
-$(TARGET): $(SRCS) sequential/average-link-seq.hpp
-	$(CXX) $(CXXFLAGS) $(SRCS) -o $(TARGET)
+.PHONY: all seq pPOP clean
+
+all: seq pPOP
+
+seq: $(SEQ_TARGET)
+
+pPOP: $(PPOP_TARGET)
+
+$(SEQ_TARGET): $(SEQ_SRCS) sequential/average-link-matrix-seq.hpp
+	$(CXX) $(CXXFLAGS) $(SEQ_SRCS) -o $(SEQ_TARGET)
+
+$(PPOP_TARGET): $(PPOP_SRCS) pPOP/average-link-pPOP.hpp sequential/average-link-matrix-seq.hpp
+	$(CXX) $(CXXFLAGS) $(PPOP_SRCS) -o $(PPOP_TARGET)
 
 clean:
-	rm -f $(TARGET)
+	rm -f $(SEQ_TARGET) $(PPOP_TARGET)
