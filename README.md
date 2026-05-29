@@ -18,3 +18,77 @@ As a sequential baseline, we will implement the standard O(n²) HAC algorithm fo
 - Emeric Payer: sequential baseline + parallel single-link (MST-based approach)
 - Mateo Fatas: parallel average-link (naive thread-parallel distance matrix)
 - Matteo Sainton: pPOP implementation on top of average-link + benchmarking infrastructure
+
+### Repository layout
+
+- `data/`: shared input datasets and generated dendrogram outputs.
+- `scripts/`: shared Python scripts for data generation (`generate_data.py`) and output validation (`validate_single_link.py`, `validate_average_link.py`).
+- `average-link/`: average-link implementations.
+- `single-link/`: single-link implementations and notes.
+
+### Build
+
+From the root of the repository, compile every C++ implementation with:
+
+```sh
+make
+```
+
+This currently builds:
+
+- `average-link/hac_seq`
+- `average-link/hac_ppop`
+- `single-link/hac_single_baseline`
+- `single-link/hac_single_mst`
+
+To build only one part, run:
+
+```sh
+make average
+make single
+```
+
+### Test
+
+Generate a small synthetic dataset:
+
+```sh
+python scripts/generate_data.py --n 100 --k 4 --out data/test_100.csv
+```
+
+Run and test single-link:
+
+```sh
+./single-link/hac_single_baseline data/test_100.csv data/single_baseline_100.csv
+./single-link/hac_single_mst data/test_100.csv data/single_mst_100.csv 4
+```
+
+Compare the single-link merge distances and cluster sizes:
+
+```sh
+python scripts/validate_single_link.py --seq data/single_baseline_100.csv --par data/single_mst_100.csv
+```
+
+Run and test average-link sequential:
+
+```sh
+./average-link/hac_seq data/test_100.csv data/average_seq_100.csv
+```
+
+Compare average-link against the Python reference implementation:
+
+```sh
+python scripts/validate_average_link.py --data data/test_100.csv --cpp_out data/average_seq_100.csv
+```
+
+Run average-link pPOP:
+
+```sh
+./average-link/hac_ppop data/test_100.csv data/average_ppop_100.csv 4 4 0.5
+```
+
+Clean compiled binaries with:
+
+```sh
+make clean
+```

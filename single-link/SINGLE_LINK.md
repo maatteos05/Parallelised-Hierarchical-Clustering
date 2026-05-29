@@ -2,12 +2,19 @@
 
 - `baseline_olson_matrix.cpp`: sequential baseline (follows matrix-based idea from Olson rather than recomputing every point distance at every merge)
 - `parallel_mst.cpp`: parallel version (uses the fact that single-link HAC can be recovered from a minimum spanning tree, then builds the MST with a threaded Boruvka-style approach)
-- `scripts/`: temporary stuff (`generate_data.py` --> synthetic CSV data, `validate.py` --> compares the baseline and MST outputs)
 
 ## Compile
 
+From this folder:
+
 ```sh
 make
+```
+
+Or from the repository root:
+
+```sh
+make single
 ```
 
 This builds:
@@ -20,13 +27,13 @@ This builds:
 Baseline:
 
 ```sh
-./hac_single_baseline data/input.csv data/baseline_output.csv
+./hac_single_baseline ../data/input.csv ../data/baseline_output.csv
 ```
 
 MST version:
 
 ```sh
-./hac_single_mst data/input.csv data/mst_output.csv 4
+./hac_single_mst ../data/input.csv ../data/mst_output.csv 4
 ```
 
 The last argument is the number of threads.
@@ -36,18 +43,18 @@ The last argument is the number of threads.
 Generate data:
 
 ```sh
-python scripts/generate_data.py --n 100 --k 4 --out data/test_100.csv
+python ../scripts/generate_data.py --n 100 --k 4 --out ../data/test_100.csv
 ```
 
 Run both versions:
 
 ```sh
-./hac_single_baseline data/test_100.csv data/baseline_100.csv
-./hac_single_mst data/test_100.csv data/mst_100.csv 4
+./hac_single_baseline ../data/test_100.csv ../data/baseline_100.csv
+./hac_single_mst ../data/test_100.csv ../data/mst_100.csv 4
 ```
 
 Compare the merge distances and cluster sizes:
 
 ```sh
-python scripts/validate.py --seq data/baseline_100.csv --par data/mst_100.csv
+python ../scripts/validate_single_link.py --seq ../data/baseline_100.csv --par ../data/mst_100.csv
 ```
