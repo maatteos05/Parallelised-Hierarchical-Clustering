@@ -1,0 +1,20 @@
+# Compiled binaries
+average-link/hac_seq
+average-link/hac_naive
+average-link/hac_ppop
+single-link/hac_single_baseline
+single-link/hac_single_mst
+
+# Object files
+*.o
+*.obj
+
+# Editor / OS junk
+.DS_Store
+.vscode/
+.idea/
+*.swp
+
+# Python
+__pycache__/
+*.pyc
