@@ -84,7 +84,7 @@ python scripts/validate_average_link.py --data data/test_100.csv --cpp_out data/
 Run average-link pPOP:
 
 ```sh
-./average-link/hac_ppop data/test_100.csv data/average_ppop_100.csv 4 4 0.5
+./average-link/hac_ppop data/test_100.csv data/average_ppop_100.csv [num_threads]
 ```
 
 Clean compiled binaries with:
