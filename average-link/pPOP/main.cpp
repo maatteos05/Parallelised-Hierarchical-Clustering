@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
     auto data = load_csv(input_path);
     int N = (int)data.size();
 
-    int n_cells_per_dim = std::max(1, (int)std::sqrt((double)N / 10.0));
+    int n_cells_per_dim = std::max(1, (int)std::sqrt(N / 10.0));
     if (argc >= 5) {
       n_cells_per_dim = std::stoi(argv[4]);
     }
