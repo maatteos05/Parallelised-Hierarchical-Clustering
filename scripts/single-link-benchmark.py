@@ -5,9 +5,9 @@ Run from the repo ROOT:
     python scripts/single-link-benchmark.py
 
 Outputs:
-    data/single_link_benchmark_results.csv   — raw timing data
-    data/single_link_benchmark_speedup.csv   — speedup relative to sequential baseline
-    data/plots/                              — speedup and time plots per algorithm / dataset size
+    data/benchmarks/single_link_results.csv   — raw timing data
+    data/benchmarks/single_link_speedup.csv   — speedup relative to sequential baseline
+    data/plots/                               — speedup and time plots per algorithm / dataset size
 """
 
 import subprocess
@@ -23,9 +23,11 @@ from pathlib import Path
 
 REPO_ROOT       = Path(__file__).resolve().parent.parent
 DATA_DIR        = REPO_ROOT / "data"
+INPUTS_DIR      = DATA_DIR  / "inputs"
 PLOTS_DIR       = DATA_DIR  / "plots"
-RESULTS_CSV     = DATA_DIR  / "single_link_benchmark_results.csv"
-SPEEDUP_CSV     = DATA_DIR  / "single_link_benchmark_speedup.csv"
+BENCHMARKS_DIR  = DATA_DIR  / "benchmarks"
+RESULTS_CSV     = BENCHMARKS_DIR / "single_link_results.csv"
+SPEEDUP_CSV     = BENCHMARKS_DIR / "single_link_speedup.csv"
 GENERATE_SCRIPT = REPO_ROOT / "scripts" / "generate_data.py"
 
 # Binaries — paths relative to REPO_ROOT
@@ -70,7 +72,7 @@ def parse_time_ms(stdout):
 
 def generate_dataset(n_points, seed=42):
     """Generate a 2-D dataset if it does not already exist."""
-    path = DATA_DIR / f"bench_{n_points}.csv"
+    path = INPUTS_DIR / f"bench_{n_points}.csv"
     if not path.exists():
         subprocess.run(
             [sys.executable, str(GENERATE_SCRIPT),
@@ -110,11 +112,12 @@ def run_trials(algo, input_csv, output_csv, n_threads=None):
 # ─────────────────────────────────────────────────────────────────────────────
 
 def main():
-    DATA_DIR.mkdir(exist_ok=True)
+    INPUTS_DIR.mkdir(parents=True, exist_ok=True)
     PLOTS_DIR.mkdir(parents=True, exist_ok=True)
+    BENCHMARKS_DIR.mkdir(parents=True, exist_ok=True)
 
     results = []  # list of dicts: {algo, n_points, n_threads, time_ms}
-    tmp_out = DATA_DIR / "single_link_bench_tmp.csv"
+    tmp_out = BENCHMARKS_DIR / "single_link_bench_tmp.csv"
 
     print("=" * 60)
     print("HAC Single-Link Benchmark")

@@ -21,7 +21,7 @@ As a sequential baseline, we will implement the standard O(n²) HAC algorithm fo
 
 ### Repository layout
 
-- `data/`: shared input datasets and generated dendrogram outputs.
+- `data/`: inputs, dendrograms, benchmarks, plots, and visual outputs (see `data/README.md`).
 - `scripts/`: shared Python scripts for data generation (`generate_data.py`) and output validation (`validate_single_link.py`, `validate_average_link.py`).
 - `average-link/`: average-link implementations.
 - `single-link/`: single-link implementations and notes.
@@ -53,38 +53,38 @@ make single
 Generate a small synthetic dataset:
 
 ```sh
-python scripts/generate_data.py --n 100 --k 4 --out data/test_100.csv
+python scripts/generate_data.py --n 100 --k 4 --out data/inputs/test_100.csv
 ```
 
 Run and test single-link:
 
 ```sh
-./single-link/hac_single_baseline data/test_100.csv data/single_baseline_100.csv
-./single-link/hac_single_mst data/test_100.csv data/single_mst_100.csv 4
+./single-link/hac_single_baseline data/inputs/test_100.csv data/dendrograms/single-link/baseline_100.csv
+./single-link/hac_single_mst data/inputs/test_100.csv data/dendrograms/single-link/mst_100.csv 4
 ```
 
 Compare the single-link merge distances and cluster sizes:
 
 ```sh
-python scripts/validate_single_link.py --seq data/single_baseline_100.csv --par data/single_mst_100.csv
+python scripts/validate_single_link.py --seq data/dendrograms/single-link/baseline_100.csv --par data/dendrograms/single-link/mst_100.csv
 ```
 
 Run and test average-link sequential:
 
 ```sh
-./average-link/hac_seq data/test_100.csv data/average_seq_100.csv
+./average-link/hac_seq data/inputs/test_100.csv data/dendrograms/average-link/seq_100.csv
 ```
 
 Compare average-link against the Python reference implementation:
 
 ```sh
-python scripts/validate_average_link.py --data data/test_100.csv --cpp_out data/average_seq_100.csv
+python scripts/validate_average_link.py --data data/inputs/test_100.csv --cpp_out data/dendrograms/average-link/seq_100.csv
 ```
 
 Run average-link pPOP:
 
 ```sh
-./average-link/hac_ppop data/test_100.csv data/average_ppop_100.csv [num_threads]
+./average-link/hac_ppop data/inputs/test_100.csv data/dendrograms/average-link/ppop_100.csv [num_threads]
 ```
 
 Clean compiled binaries with:

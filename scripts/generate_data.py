@@ -21,7 +21,7 @@ def main() -> None:
     parser.add_argument("--n", type=int, default=200, help="Number of points")
     parser.add_argument("--k", type=int, default=5, help="Number of clusters")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
-    parser.add_argument("--out", type=str, default="data/test.csv",
+    parser.add_argument("--out", type=str, default="data/inputs/test.csv",
                         help="Output CSV path")
     args = parser.parse_args()
 

@@ -27,13 +27,13 @@ This builds:
 Baseline:
 
 ```sh
-./hac_single_baseline ../data/input.csv ../data/baseline_output.csv
+./hac_single_baseline ../data/inputs/input.csv ../data/dendrograms/single-link/baseline_output.csv
 ```
 
 MST version:
 
 ```sh
-./hac_single_mst ../data/input.csv ../data/mst_output.csv 4
+./hac_single_mst ../data/inputs/input.csv ../data/dendrograms/single-link/mst_output.csv 4
 ```
 
 The last argument is the number of threads.
@@ -43,18 +43,18 @@ The last argument is the number of threads.
 Generate data:
 
 ```sh
-python ../scripts/generate_data.py --n 100 --k 4 --out ../data/test_100.csv
+python ../scripts/generate_data.py --n 100 --k 4 --out ../data/inputs/test_100.csv
 ```
 
 Run both versions:
 
 ```sh
-./hac_single_baseline ../data/test_100.csv ../data/baseline_100.csv
-./hac_single_mst ../data/test_100.csv ../data/mst_100.csv 4
+./hac_single_baseline ../data/inputs/test_100.csv ../data/dendrograms/single-link/baseline_100.csv
+./hac_single_mst ../data/inputs/test_100.csv ../data/dendrograms/single-link/mst_100.csv 4
 ```
 
 Compare the merge distances and cluster sizes:
 
 ```sh
-python ../scripts/validate_single_link.py --seq ../data/baseline_100.csv --par ../data/mst_100.csv
+python ../scripts/validate_single_link.py --seq ../data/dendrograms/single-link/baseline_100.csv --par ../data/dendrograms/single-link/mst_100.csv
 ```
