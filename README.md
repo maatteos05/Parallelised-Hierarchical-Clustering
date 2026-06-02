@@ -22,7 +22,7 @@ As a sequential baseline, we will implement the standard O(n²) HAC algorithm fo
 ### Repository layout
 
 - `data/`: inputs, dendrograms, benchmarks, plots, and visual outputs (see `data/README.md`).
-- `scripts/`: shared Python scripts for data generation (`generate_data.py`) and output validation (`validate_single_link.py`, `validate_average_link.py`).
+- `scripts/`: data generation, validation, dendrogram visualization, and benchmark drivers (see **How to run** below).
 - `average-link/`: average-link implementations.
 - `single-link/`: single-link implementations and notes.
 
@@ -36,59 +36,126 @@ make
 
 This currently builds:
 
-- `average-link/hac_seq`
-- `average-link/hac_ppop`
-- `single-link/hac_single_baseline`
-- `single-link/hac_single_mst`
+- `average-link/hac_seq` -- sequential average-link baseline
+- `average-link/hac_naive` -- naive parallel average-link
+- `average-link/hac_ppop` -- pPOP parallel average-link
+- `single-link/hac_single_baseline` -- sequential single-link baseline
+- `single-link/hac_single_mst` -- parallel single-link (MST / Borůvka)
 
-To build only one part, run:
+To build only one part:
 
 ```sh
-make average
-make single
+make average   # average-link only
+make single    # single-link only
+make clean     # remove all binaries
 ```
 
-### Test
+---
 
-Generate a small synthetic dataset:
+## How to run
+
+All commands below are run from the **repository root**. Inputs are point clouds in `data/inputs/`; dendrogram outputs go in `data/dendrograms/` (see `data/DATA_README.md` for the full layout).
+
+### Generating a dataset
+
+Synthetic clustered 2-D data (`generate_data.py` uses `--n` points, `--k` clusters, optional `--seed`):
 
 ```sh
 python scripts/generate_data.py --n 100 --k 4 --out data/inputs/test_100.csv
 ```
 
-Run and test single-link:
+Pre-generated inputs already in the repo include `test_100.csv` and `bench_{500,1000,2000,5000}.csv`.
+
+### Run an algorithm
+
+Each binary reads an input CSV and writes a dendrogram CSV (`cl1,cl2,dist,new_size`). Replace paths and thread counts as needed.
+
+**Single-link**
 
 ```sh
-./single-link/hac_single_baseline data/inputs/test_100.csv data/dendrograms/single-link/baseline_100.csv
-./single-link/hac_single_mst data/inputs/test_100.csv data/dendrograms/single-link/mst_100.csv 4
+# Sequential baseline
+./single-link/hac_single_baseline <input.csv> <output.csv>
+
+# Parallel (MST) (last argument is thread count)
+./single-link/hac_single_mst <input.csv> <output.csv> <threads>
 ```
 
-Compare the single-link merge distances and cluster sizes:
+Example on the small test set:
 
 ```sh
-python scripts/validate_single_link.py --seq data/dendrograms/single-link/baseline_100.csv --par data/dendrograms/single-link/mst_100.csv
+./single-link/hac_single_baseline \
+  data/inputs/test_100.csv data/dendrograms/single-link/baseline_100.csv
+
+./single-link/hac_single_mst \
+  data/inputs/test_100.csv data/dendrograms/single-link/mst_100.csv 4
 ```
 
-Run and test average-link sequential:
+**Average-link**
 
 ```sh
-./average-link/hac_seq data/inputs/test_100.csv data/dendrograms/average-link/seq_100.csv
+# Sequential baseline
+./average-link/hac_seq <input.csv> <output.csv>
+
+# Naive parallel (optional third argument is thread count (default 4))
+./average-link/hac_naive <input.csv> <output.csv> [threads]
+
+# pPOP parallel (third argument is thread count; optional fourth is grid cells per dim)
+./average-link/hac_ppop <input.csv> <output.csv> <threads> [n_cells_per_dim]
 ```
 
-Compare average-link against the Python reference implementation:
+Example:
 
 ```sh
-python scripts/validate_average_link.py --data data/inputs/test_100.csv --cpp_out data/dendrograms/average-link/seq_100.csv
+./average-link/hac_seq \
+  data/inputs/test_100.csv data/dendrograms/average-link/seq_100.csv
+
+./average-link/hac_naive \
+  data/inputs/test_100.csv data/dendrograms/average-link/naive_100.csv 4
+
+./average-link/hac_ppop \
+  data/inputs/test_100.csv data/dendrograms/average-link/ppop_100.csv 4
 ```
 
-Run average-link pPOP:
+Each program prints its wall-clock time to stdout when it finishes.
+
+### Check correctness
+
+**Single-link** -- sequential vs parallel must produce the same merge distances and cluster sizes:
 
 ```sh
-./average-link/hac_ppop data/inputs/test_100.csv data/dendrograms/average-link/ppop_100.csv [num_threads]
+python scripts/validate_single_link.py \
+  --seq data/dendrograms/single-link/baseline_100.csv \
+  --par data/dendrograms/single-link/mst_100.csv
 ```
 
-Clean compiled binaries with:
+**Average-link** -- compare any C++ dendrogram against a Python reference implementation on the same input:
 
 ```sh
-make clean
+python scripts/validate_average_link.py \
+  --data data/inputs/test_100.csv \
+  --cpp_out data/dendrograms/average-link/seq_100.csv
 ```
+
+Use the same command with `naive_100.csv` or `ppop_100.csv` as `--cpp_out` to validate the parallel versions.
+
+### 4. Visualize a dendrogram (optional)
+
+Renders an ASCII tree to `data/visual/`:
+
+```sh
+python scripts/visualize_dendrogram.py \
+  data/dendrograms/average-link/ppop_100.csv average_ppop_100_vis.txt
+```
+
+The output file is written to `data/visual/average_ppop_100_vis.txt`.
+
+### 5. Run performance benchmarks
+
+Runs each implementation over several dataset sizes and thread counts, writes timing CSVs to `data/benchmarks/` and plots to `data/plots/`. Requires `pandas` and `matplotlib`.
+
+```sh
+python scripts/single-link-benchmark.py
+python scripts/average-link-benchmark.py
+```
+
+Results: `data/benchmarks/single_link_results.csv`, `data/benchmarks/average_link_results.csv`, and corresponding speedup tables; figures under `data/plots/`.
