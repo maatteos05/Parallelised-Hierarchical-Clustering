@@ -9,8 +9,8 @@ MST_TARGET      = hac_single_mst
 
 all: $(BASELINE_TARGET) $(MST_TARGET)
 
-$(BASELINE_TARGET): baseline_olson_matrix.cpp
-	$(CXX) $(CXXFLAGS) baseline_olson_matrix.cpp -o $(BASELINE_TARGET)
+$(BASELINE_TARGET): baseline.cpp
+	$(CXX) $(CXXFLAGS) baseline.cpp -o $(BASELINE_TARGET)
 
 $(MST_TARGET): parallel_mst.cpp
 	$(CXX) $(CXXFLAGS) $(THREADS) parallel_mst.cpp -o $(MST_TARGET)

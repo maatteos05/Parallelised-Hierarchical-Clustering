@@ -11,13 +11,14 @@ We have decided to implement and parallelize three hierarchical agglomerative cl
 - Average-link with pPOP, a second parallelization strategy for average-link using the partially overlapping partitioning scheme from Dash, Petrutiu & Scheuermann (2007). This will allow a direct comparison between a naive parallel approach and a partition-based one on the same linkage criterion.
 
 
-As a sequential baseline, we will implement the standard O(n²) HAC algorithm for both linkage criteria. All implementations will be in C++ using std::thread primitives consistent with the course material. Benchmarks will be run on datasets of varying sizes (synthetic data generated with controlled cluster structure, as well as datasets from the repository provided in the project description), measuring speedup as a function of thread count.
+As a sequential baseline, we implemented the standard O($n^2$) HAC algorithm for both linkage criteria. All implementations are in C++ using std::thread primitives consistent with the course material. Benchmarks are run on datasets of varying sizes (synthetic data generated with controlled cluster structure, as well as datasets from the repository provided in the project description), measuring speedup as a function of thread count.
 
-### Tentative task partition
+### Task partition
 
 - Emeric Payer: sequential baseline + parallel single-link (MST-based approach)
 - Mateo Fatas: parallel average-link (naive thread-parallel distance matrix)
-- Matteo Sainton: pPOP implementation on top of average-link + benchmarking infrastructure
+- Matteo Sainton: pPOP implementation on top of average-link
+- Common: data generation + benchmarking infrastructure
 
 ### Repository layout
 
