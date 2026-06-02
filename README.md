@@ -150,11 +150,11 @@ python scripts/plot_clusters.py --input data/test_100.csv --k 4
 python scripts/plot_clusters.py --input data/test_100.csv --k 4 --family average --run
 ```
 
-Options: `--family single|average|all`, `--threads 4`, `--run` (generate dendrograms first), `--out <path>`, `--dendro name:path` (repeatable). Output: `results/plots/clusters_<stem>_k<k>_<family>.png`.
+Options: `--family single|average|all`, `--threads 4`, `--run` (generate dendrograms first), `--out <path>`, `--dendro name:path` (repeatable). Output: `results/plots/visualizations/clusters_<stem>_k<k>_<family>.png`.
 
 ### Run performance benchmarks
 
-Runs implementations over several dataset sizes and thread counts; writes CSVs to `results/benchmarks/` and plots to `results/plots/`. Requires `pandas` and `matplotlib`.
+Runs implementations over several dataset sizes and thread counts; writes CSVs to `results/benchmarks/` and plots to `results/plots/analysis/`. Requires `pandas` and `matplotlib`.
 
 ```sh
 python scripts/benchmark.py              # single-link + average-link
@@ -162,4 +162,4 @@ python scripts/benchmark.py --family single
 python scripts/benchmark.py --family average
 ```
 
-Results: `results/benchmarks/single_link_results.csv`, `results/benchmarks/average_link_results.csv`, speedup tables, and figures under `results/plots/`.
+Results: `results/benchmarks/single_link_results.csv`, `results/benchmarks/average_link_results.csv`, speedup tables, and figures under `results/plots/analysis/`.

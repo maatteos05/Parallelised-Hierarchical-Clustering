@@ -10,7 +10,7 @@ import numpy as np
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent
-PLOTS_DIR = REPO_ROOT / "results" / "plots"
+PLOTS_DIR = REPO_ROOT / "results" / "plots" / "visualizations"
 
 sys.path.insert(0, str(SCRIPT_DIR))
 from validate import (  # noqa: E402
@@ -119,7 +119,7 @@ def main() -> None:
     parser.add_argument("--run", action="store_true", default=False,
                         help="Run HAC binaries before plotting")
     parser.add_argument("--out", type=str, default=None,
-                        help="Output PNG path (default: results/plots/clusters_<stem>_k<k>_<family>.png)")
+                        help="Output PNG path (default: results/plots/visualizations/clusters_<stem>_k<k>_<family>.png)")
     args = parser.parse_args()
 
     input_csv = Path(args.input)
