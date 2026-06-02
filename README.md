@@ -24,7 +24,7 @@ As a sequential baseline, we implemented the standard O($n^2$) HAC algorithm for
 
 - `data/`: input point-cloud CSVs (see `data/DATA_README.md`).
 - `results/`: dendrograms, benchmark tables, plots, and visual outputs (see `results/README.md`).
-- `scripts/`: data generation, validation, dendrogram visualization, and benchmark drivers (see **How to run** below).
+- `scripts/`: data generation, validation, dendrogram visualization, cluster plots, and benchmark drivers (see **How to run** below).
 - `average-link/`: average-link implementations.
 - `single-link/`: single-link implementations and notes.
 
@@ -140,6 +140,17 @@ python scripts/visualize_dendrogram.py \
 ```
 
 The output file is written to `results/visual/average_ppop_100_vis.txt`.
+
+### Plot cluster colourings (optional)
+
+Compare raw points with the k-cluster partition from each dendrogram (cut after `n − k` merges). Useful to check visually that each apparent blob is one colour:
+
+```sh
+python scripts/plot_clusters.py --input data/test_100.csv --k 4
+python scripts/plot_clusters.py --input data/test_100.csv --k 4 --family average --run
+```
+
+Options: `--family single|average|all`, `--threads 4`, `--run` (generate dendrograms first), `--out <path>`, `--dendro name:path` (repeatable). Output: `results/plots/clusters_<stem>_k<k>_<family>.png`.
 
 ### Run performance benchmarks
 

@@ -7,7 +7,7 @@ Everything produced by running HAC binaries or analysis scripts.
 | `dendrograms/single-link/` | Single-link merge CSVs (`cl1,cl2,dist,new_size`). |
 | `dendrograms/average-link/` | Average-link merge CSVs. |
 | `benchmarks/` | Timing tables from `scripts/benchmark.py`. |
-| `plots/` | Speedup and runtime PNG figures. |
+| `plots/` | Speedup/runtime PNGs and cluster colourings from `scripts/plot_clusters.py`. |
 | `visual/` | ASCII dendrogram text from `scripts/visualize_dendrogram.py`. |
 
 Regenerate benchmarks and plots:
