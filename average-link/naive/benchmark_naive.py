@@ -45,7 +45,7 @@ DATA_DIR = NAIVE_DIR / "bench_data"
 TMP_DIR = NAIVE_DIR / "bench_tmp"
 
 # Tolerance for matching merge distances when validating correctness.
-# Same value used in scripts/validate_average_link.py.
+# Same value used in scripts/validate.py.
 DIST_TOL = 1e-5
 
 

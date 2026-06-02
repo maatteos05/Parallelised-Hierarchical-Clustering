@@ -168,10 +168,10 @@ def main():
     # Draw the beautiful ASCII dendrogram
     dendrogram_art = draw_ascii_dendrogram(root, merge_events, N)
     
-    # Place all visualization text files in the 'data/visual' directory
+    # Place all visualization text files in the 'results/visual' directory
     repo_root = Path(__file__).resolve().parent.parent
     out_name = Path(args.output_txt).name
-    out_path = repo_root / "data" / "visual" / out_name
+    out_path = repo_root / "results" / "visual" / out_name
     out_path.parent.mkdir(parents=True, exist_ok=True)
     
     with open(out_path, "w", encoding="utf-8") as f:
