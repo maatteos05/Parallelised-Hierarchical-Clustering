@@ -1,29 +1,3 @@
-"""
-Benchmark the naive thread-parallel average-link HAC against the sequential
-matrix baseline.
-
-For each dataset size N in --sizes:
-  1) Generate (or reuse) a synthetic clustered CSV of N points.
-  2) Sanity-check correctness once: confirm hac_naive (at max threads)
-     produces a dendrogram identical to hac_seq's.
-  3) Time hac_seq once (warmup) + --repeats times -> take the median.
-  4) For each thread count in --threads:
-       Time hac_naive --repeats times -> take the median.
-       Compute speedup = T_seq_median / T_naive_median.
-  5) Write a tidy results CSV and print a summary table.
-
-The script measures algorithm wall-clock time as reported by the binaries
-themselves ("HAC done in X ms"), which excludes file I/O. Each timing run
-is invoked in a fresh process, so there's no warmup bleed-through between
-runs (we still discard one untimed warmup run per binary to absorb OS-level
-filesystem caching of the input CSV).
-
-Usage (run from repo root):
-  python3 average-link/naive/benchmark_naive.py
-  python3 average-link/naive/benchmark_naive.py --sizes 500 1000 2000 \\
-      --threads 1 2 3 4 --repeats 5 --out results/naive_bench.csv
-"""
-
 from __future__ import annotations
 
 import argparse
