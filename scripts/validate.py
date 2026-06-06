@@ -14,8 +14,8 @@ TOL_SINGLE = 1e-6
 TOL_AVERAGE = 1e-5
 
 BINARIES = {
-    "single_baseline": REPO_ROOT / "single-link" / "hac_single_baseline",
-    "single_mst": REPO_ROOT / "single-link" / "hac_single_mst",
+    "single_baseline": REPO_ROOT / "single-link" / "single_link_baseline",
+    "single_mst": REPO_ROOT / "single-link" / "single_link_mst",
     "avg_seq": REPO_ROOT / "average-link" / "hac_seq",
     "avg_naive": REPO_ROOT / "average-link" / "hac_naive",
     "avg_ppop": REPO_ROOT / "average-link" / "hac_ppop",

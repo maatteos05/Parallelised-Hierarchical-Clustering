@@ -24,8 +24,8 @@ FAMILIES = {
         "title": "Single-Link",
         "prefix": "single_link",
         "binaries": {
-            "seq": REPO_ROOT / "single-link" / "hac_single_baseline",
-            "mst": REPO_ROOT / "single-link" / "hac_single_mst",
+            "seq": REPO_ROOT / "single-link" / "single_link_baseline",
+            "mst": REPO_ROOT / "single-link" / "single_link_mst",
         },
         "parallel": ["mst"],
         "labels": {"mst": "Boruvka MST parallel"},
