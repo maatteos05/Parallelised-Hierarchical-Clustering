@@ -11,25 +11,18 @@
 #include <thread>
 #include <vector>
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Internal data structures
-// ─────────────────────────────────────────────────────────────────────────────
-
 struct Cell {
   double x_min, x_max;
   double y_min, y_max;
-  std::vector<int> cluster_ids; // ids of clusters currently in this cell
+  std::vector<int> cluster_ids;
 };
 
-// Result of one thread's find-min scan over its assigned cells.
 struct LocalMin {
   double dist = std::numeric_limits<double>::infinity();
   int ci = -1;
   int cj = -1;
 };
 
-// One entry in a per-cluster min-heap.
-// Means: "my distance to cluster `other` is `dist`."
 struct PQEntry {
   double dist;
   int other;
@@ -39,9 +32,6 @@ struct PQEntry {
 using MinHeap =
     std::priority_queue<PQEntry, std::vector<PQEntry>, std::greater<PQEntry>>;
 
-// ──────────────────────────────────────────────────────────────────────────────
-//  Thread pool
-// ──────────────────────────────────────────────────────────────────────────────
 class ThreadPool {
 public:
   explicit ThreadPool(int n) : n_threads(n) {
@@ -60,8 +50,6 @@ public:
       w.join();
   }
 
-  // Run job(tid) on every thread (the n-1 workers plus the main thread as the
-  // last worker), then block until all of them have finished.
   void run(const std::function<void(int)> &fn) {
     job = &fn;
     {
@@ -71,7 +59,7 @@ public:
     }
     cv_start.notify_all();
 
-    (*job)(n_threads - 1); // main thread acts as the last worker
+    (*job)(n_threads - 1);
 
     std::unique_lock<std::mutex> lk(mtx);
     cv_done.wait(lk, [this] { return done == n_threads - 1; });
@@ -82,8 +70,7 @@ private:
     int my_gen = 0;
     while (true) {
       std::unique_lock<std::mutex> lk(mtx);
-      cv_start.wait(lk,
-                    [this, &my_gen] { return generation != my_gen || stop; });
+      cv_start.wait(lk, [this, &my_gen] { return generation != my_gen || stop; });
       if (stop)
         return;
       my_gen = generation;
@@ -107,19 +94,12 @@ private:
   bool stop = false;
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────────────────────
-
-// True if point (px, py) falls inside the cell boundary extended by delta.
 static bool in_cell(double px, double py, const Cell &cell) {
   return px >= cell.x_min && px <= cell.x_max && py >= cell.y_min &&
          py <= cell.y_max;
 }
 
-// Euclidean distance between two points (any dimension).
-static double euclidean(const std::vector<double> &a,
-                        const std::vector<double> &b) {
+static double euclidean(const std::vector<double> &a, const std::vector<double> &b) {
   double sum = 0.0;
   for (int d = 0; d < (int)a.size(); d++) {
     double diff = a[d] - b[d];
@@ -128,7 +108,6 @@ static double euclidean(const std::vector<double> &a,
   return std::sqrt(sum);
 }
 
-// True if val is already in vector v.
 static bool contains(const std::vector<int> &v, int val) {
   for (int x : v)
     if (x == val)
@@ -136,14 +115,8 @@ static bool contains(const std::vector<int> &v, int val) {
   return false;
 }
 
-// Build grid and assign active clusters to cells.
 static std::vector<Cell>
-build_grid(int n_cells_per_dim, double delta, double x_min, double x_max,
-           double y_min, double y_max,
-           const std::vector<std::vector<double>> &data, int N, int next_id,
-           const std::vector<char> &active,
-           std::vector<std::vector<int>> &cluster_cells,
-           std::vector<double> &rep_x, std::vector<double> &rep_y) {
+build_grid(int n_cells_per_dim, double delta, double x_min, double x_max, double y_min, double y_max, const std::vector<std::vector<double>> &data, int N, int next_id, const std::vector<char> &active, std::vector<std::vector<int>> &cluster_cells, std::vector<double> &rep_x, std::vector<double> &rep_y) {
   int total_cells = n_cells_per_dim * n_cells_per_dim;
   double cell_w = (x_max - x_min) / n_cells_per_dim;
   double cell_h = (y_max - y_min) / n_cells_per_dim;
@@ -159,14 +132,10 @@ build_grid(int n_cells_per_dim, double delta, double x_min, double x_max,
     }
   }
 
-  // Clear old cell assignments for all active clusters.
   for (int i = 0; i < next_id; i++)
     if (active[i])
       cluster_cells[i].clear();
 
-  // Assign active clusters to cells using their representative coordinate.
-  // For original points: use raw data coordinates.
-  // For merged clusters: use the stored representative coordinate.
   for (int i = 0; i < next_id; i++) {
     if (!active[i])
       continue;
@@ -183,24 +152,14 @@ build_grid(int n_cells_per_dim, double delta, double x_min, double x_max,
   return cells;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Thread worker — scans a fixed chunk of cells [cell_begin, cell_end)
-// and finds the closest active pair within those cells.
-// ─────────────────────────────────────────────────────────────────────────────
 static void
-build_heaps_thread(std::atomic<int> &next_cell, int total_cells,
-                   const std::vector<Cell> &cells,
-                   const std::vector<std::vector<int>> &cluster_cells,
-                   const std::vector<std::vector<double>> &D,
-                   std::vector<MinHeap> &pq) {
+build_heaps_thread(std::atomic<int> &next_cell, int total_cells, const std::vector<Cell> &cells, const std::vector<std::vector<int>> &cluster_cells, const std::vector<std::vector<double>> &D, std::vector<MinHeap> &pq) {
   int c;
   while ((c = next_cell.fetch_add(1)) < total_cells) {
     const std::vector<int> &ids = cells[c].cluster_ids;
     for (int i : ids) {
-      // Only the owner of i's primary cell builds pq[i].
       if (cluster_cells[i][0] != c)
         continue;
-      // Build pq[i] from all clusters sharing ANY of i's cells.
       for (int cell_id : cluster_cells[i]) {
         for (int j : cells[cell_id].cluster_ids) {
           if (j != i)
@@ -211,11 +170,7 @@ build_heaps_thread(std::atomic<int> &next_cell, int total_cells,
   }
 }
 
-static void find_min_thread(std::atomic<int> &next_cell, int total_cells,
-                            const std::vector<Cell> &cells,
-                            const std::vector<char> &active,
-                            const std::vector<std::vector<int>> &cluster_cells,
-                            std::vector<MinHeap> &pq, LocalMin &result) {
+static void find_min_thread(std::atomic<int> &next_cell, int total_cells, const std::vector<Cell> &cells, const std::vector<char> &active, const std::vector<std::vector<int>> &cluster_cells, std::vector<MinHeap> &pq, LocalMin &result) {
   double local_dist = std::numeric_limits<double>::infinity();
   int local_i = -1;
   int local_j = -1;
@@ -251,30 +206,21 @@ static void find_min_thread(std::atomic<int> &next_cell, int total_cells,
   result.cj = local_j;
 }
 
-static void update_heaps_thread(int begin, int end,
-                                const std::vector<int> &affected_clusters,
-                                int k,
-                                const std::vector<std::vector<double>> &D,
-                                std::vector<MinHeap> &pq) {
+static void update_heaps_thread(int begin, int end, const std::vector<int> &affected_clusters, int k, const std::vector<std::vector<double>> &D, std::vector<MinHeap> &pq) {
   for (int i = begin; i < end; i++) {
     int m = affected_clusters[i];
     pq[m].push({D[k][m], k});
   }
 }
 
-// Lance-Williams update worker.
-static void update_D_thread(int begin, int end, const std::vector<int> &targets,
-                            int k, int best_i, int best_j, int sz_i, int sz_j,
-                            int sz_k, std::vector<std::vector<double>> &D) {
+static void update_D_thread(int begin, int end, const std::vector<int> &targets, int k, int best_i, int best_j, int sz_i, int sz_j, int sz_k, std::vector<std::vector<double>> &D) {
   for (int idx = begin; idx < end; idx++) {
     int m = targets[idx];
-    double d_km = ((double)sz_i * D[best_i][m] + (double)sz_j * D[best_j][m]) /
-                  (double)sz_k;
+    double d_km = ((double)sz_i * D[best_i][m] + (double)sz_j * D[best_j][m]) / (double)sz_k;
     D[k][m] = D[m][k] = d_km;
   }
 }
 
-// Helper: chunk boundary for a static split of `n` items across `n_threads`.
 static inline int chunk_begin(int tid, int n, int n_threads) {
   int block = n / n_threads;
   return tid * block;
@@ -283,13 +229,9 @@ static inline int chunk_end(int tid, int n, int n_threads) {
   int block = n / n_threads;
   return (tid == n_threads - 1) ? n : (tid + 1) * block;
 }
-// ─────────────────────────────────────────────────────────────────────────────
-// Main algorithm
-// ─────────────────────────────────────────────────────────────────────────────
 
 std::vector<MergeEvent>
-hac_average_link_ppop(const std::vector<std::vector<double>> &data,
-                      int n_threads, int initial_n_cells_per_dim) {
+hac_average_link_ppop(const std::vector<std::vector<double>> &data, int n_threads, int initial_n_cells_per_dim) {
   int N = (int)data.size();
   int MAX_ID = 2 * N;
 
@@ -311,15 +253,12 @@ hac_average_link_ppop(const std::vector<std::vector<double>> &data,
 
   std::vector<std::vector<int>> cluster_cells(MAX_ID);
 
-  // Initialise D
   for (int i = 0; i < N; i++)
     for (int j = i + 1; j < N; j++)
       D[i][j] = D[j][i] = euclidean(data[i], data[j]);
 
-  // pq[i] contains (dist, j) entries for every cluster j in the same cell as i.
   std::vector<MinHeap> pq(MAX_ID);
 
-  // Representative coordinates for merged clusters
   std::vector<double> rep_x(MAX_ID, 0.0);
   std::vector<double> rep_y(MAX_ID, 0.0);
   for (int i = 0; i < N; i++) {
@@ -327,7 +266,6 @@ hac_average_link_ppop(const std::vector<std::vector<double>> &data,
     rep_y[i] = data[i][1];
   }
 
-  // Bounding box (fixed throughout all nested iterations)
   double x_min = data[0][0], x_max = data[0][0];
   double y_min = data[0][1], y_max = data[0][1];
   for (int i = 0; i < N; i++) {
@@ -345,36 +283,28 @@ hac_average_link_ppop(const std::vector<std::vector<double>> &data,
   y_min -= 1e-9;
   y_max += 1e-9;
 
-  // Nested iteration parameters
-
   const double D_INCR = 0.1;
   const double C_DECR = 0.1;
 
   double delta = 0.0;
   int n_cells_per_dim = initial_n_cells_per_dim;
-  double last_exceeding_dist = 0.0; // dist that first exceeded previous delta
+  double last_exceeding_dist = 0.0;
 
   std::vector<MergeEvent> dendrogram;
   int next_id = N;
 
   std::atomic<int> next_cell(0);
 
-  // Create the thread pool once
   ThreadPool pool(n_threads);
 
-  // ─────────────────────────────────────────────────────────────────────
-  // Nested loop — each iteration is one "phase 1" with current delta/cells
-  // ─────────────────────────────────────────────────────────────────────
   while (n_active > 1) {
 
-    // ── Rebuild grid and heaps for this nested iteration ──────────────
     int total_cells = n_cells_per_dim * n_cells_per_dim;
 
     std::vector<Cell> cells =
         build_grid(n_cells_per_dim, delta, x_min, x_max, y_min, y_max, data, N,
                    next_id, active, cluster_cells, rep_x, rep_y);
 
-    // Clear and rebuild heaps for all active clusters in the new grid.
     for (int i = 0; i < next_id; i++) {
       if (active[i]) {
         MinHeap empty;
@@ -382,14 +312,11 @@ hac_average_link_ppop(const std::vector<std::vector<double>> &data,
       }
     }
 
-    // Rebuild heaps in PARALLEL via the pool.
     next_cell.store(0);
     pool.run([&](int) {
       build_heaps_thread(next_cell, total_cells, cells, cluster_cells, D, pq);
     });
 
-    // ── Phase 1 loop for this nested iteration ────────────────────────
-    // Run until best_dist >= delta or only 1 cluster remains.
     while (n_active > 1) {
 
       next_cell.store(0);
@@ -400,7 +327,6 @@ hac_average_link_ppop(const std::vector<std::vector<double>> &data,
                         pq, results[tid]);
       });
 
-      // Step 2: pick global minimum
       double best_dist = std::numeric_limits<double>::infinity();
       int best_i = -1;
       int best_j = -1;
@@ -413,12 +339,10 @@ hac_average_link_ppop(const std::vector<std::vector<double>> &data,
         }
       }
 
-      // Check termination
       if (best_i == -1 || best_dist >= delta) {
         last_exceeding_dist = best_dist;
         break;
       }
-      // Step 3: merge and update D (sequential)
       int k = next_id++;
       sz[k] = sz[best_i] + sz[best_j];
 
@@ -429,7 +353,6 @@ hac_average_link_ppop(const std::vector<std::vector<double>> &data,
                   (double)sz[best_j] * rep_y[best_j]) /
                  sz[k];
 
-      // Cell membership of k = union of best_i's and best_j's cells.
       std::vector<int> k_cells;
       for (int cell_id : cluster_cells[best_i])
         if (!contains(k_cells, cell_id))
@@ -439,7 +362,6 @@ hac_average_link_ppop(const std::vector<std::vector<double>> &data,
           k_cells.push_back(cell_id);
       cluster_cells[k] = k_cells;
 
-      // Lance-Williams update for ALL active clusters, done in parallel.
       std::vector<int> targets;
       for (int m = 0; m < next_id; m++)
         if (active[m] && m != best_i && m != best_j)
@@ -447,12 +369,9 @@ hac_average_link_ppop(const std::vector<std::vector<double>> &data,
 
       int n_targets = (int)targets.size();
       pool.run([&](int tid) {
-        update_D_thread(chunk_begin(tid, n_targets, n_threads),
-                        chunk_end(tid, n_targets, n_threads), targets, k,
-                        best_i, best_j, sz[best_i], sz[best_j], sz[k], D);
+        update_D_thread(chunk_begin(tid, n_targets, n_threads), chunk_end(tid, n_targets, n_threads), targets, k, best_i, best_j, sz[best_i], sz[best_j], sz[k], D);
       });
 
-      // Update cell cluster lists.
       for (int cell_id : k_cells) {
         cells[cell_id].cluster_ids.push_back(k);
       }
@@ -462,7 +381,6 @@ hac_average_link_ppop(const std::vector<std::vector<double>> &data,
       active[k] = 1;
       n_active--;
 
-      // Record merge and update active flags.
       MergeEvent event;
       event.cl1 = best_i;
       event.cl2 = best_j;
@@ -470,7 +388,6 @@ hac_average_link_ppop(const std::vector<std::vector<double>> &data,
       event.new_size = sz[k];
       dendrogram.push_back(event);
 
-      // Step 4: parallel heap update
       std::vector<int> affected_clusters;
       for (int cell_id : k_cells) {
         for (int m : cells[cell_id].cluster_ids) {
@@ -481,18 +398,13 @@ hac_average_link_ppop(const std::vector<std::vector<double>> &data,
 
       int n_affected = (int)affected_clusters.size();
       pool.run([&](int tid) {
-        update_heaps_thread(chunk_begin(tid, n_affected, n_threads),
-                            chunk_end(tid, n_affected, n_threads),
-                            affected_clusters, k, D, pq);
+        update_heaps_thread(chunk_begin(tid, n_affected, n_threads), chunk_end(tid, n_affected, n_threads), affected_clusters, k, D, pq);
       });
 
-      // Step 5: build pq[k]
       for (int m : affected_clusters) {
         pq[k].push({D[k][m], m});
       }
     }
-
-    // Update nested parameters for next iteration
 
     if (last_exceeding_dist == std::numeric_limits<double>::infinity())
       break;
@@ -500,12 +412,10 @@ hac_average_link_ppop(const std::vector<std::vector<double>> &data,
     delta = (1.0 + D_INCR) * last_exceeding_dist;
 
     int decayed = (int)(n_cells_per_dim * (1.0 - C_DECR));
-    if (decayed >= n_cells_per_dim)  // truncation left it unchanged
-      decayed = n_cells_per_dim - 1; // force a step down
-    int floor_for_threads =
-        std::max(2, (int)std::sqrt((double)(2 * n_threads))); // ~2*p cells
-    int cap_by_clusters = std::max(
-        1, (int)std::sqrt((double)n_active / 4.0)); // >=4 clusters/cell
+    if (decayed >= n_cells_per_dim)
+      decayed = n_cells_per_dim - 1;
+    int floor_for_threads = std::max(2, (int)std::sqrt((double)(2 * n_threads)));
+    int cap_by_clusters = std::max(1, (int)std::sqrt((double)n_active / 4.0));
     int floor_cells = std::min(floor_for_threads, cap_by_clusters);
     n_cells_per_dim = std::max(decayed, floor_cells);
   }
