@@ -1,7 +1,3 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// Matrix-based sequential baseline for average-link HAC.
-// ─────────────────────────────────────────────────────────────────────────────
-
 #include "average-link-matrix-seq.hpp"
 
 #include <cassert>
@@ -10,8 +6,6 @@
 #include <limits>
 #include <sstream>
 #include <stdexcept>
-
-// ─── I/O ─────────────────────────────────────────────────────────────────────
 
 std::vector<std::vector<double>> load_csv(const std::string &path) {
   std::ifstream file(path);
@@ -33,8 +27,7 @@ std::vector<std::vector<double>> load_csv(const std::string &path) {
   return data;
 }
 
-void save_dendrogram(const std::vector<MergeEvent> &dg,
-                     const std::string &path) {
+void save_dendrogram(const std::vector<MergeEvent> &dg, const std::string &path) {
   std::ofstream file(path);
   if (!file.is_open())
     throw std::runtime_error("Cannot open file: " + path);
@@ -43,12 +36,7 @@ void save_dendrogram(const std::vector<MergeEvent> &dg,
     file << e.cl1 << ',' << e.cl2 << ',' << e.dist << ',' << e.new_size << '\n';
 }
 
-// ─────────────────────────────────────────────────────────────────────
-
-// Euclidean distance between two points. Same as in the heap version; kept
-// local (static) so the two translation units don't clash at link time.
-static double euclidean(const std::vector<double> &a,
-                        const std::vector<double> &b) {
+static double euclidean(const std::vector<double> &a, const std::vector<double> &b) {
   assert(a.size() == b.size());
   double sum = 0.0;
   for (size_t d = 0; d < a.size(); ++d) {
@@ -58,8 +46,6 @@ static double euclidean(const std::vector<double> &a,
   return std::sqrt(sum);
 }
 
-// ─────────────────────────────────────────────────────────────────────
-
 std::vector<MergeEvent>
 hac_average_link_matrix(const std::vector<std::vector<double>> &data) {
 
@@ -67,23 +53,18 @@ hac_average_link_matrix(const std::vector<std::vector<double>> &data) {
   if (N < 2)
     throw std::invalid_argument("Need at least 2 data points.");
 
-  // Cluster ids: leaves 0..N-1, merged clusters N..2N-2.
   const int MAX_ID = 2 * N;
 
-  // Distance matrix indexed by cluster id (symmetric).
   std::vector<std::vector<double>> D(MAX_ID, std::vector<double>(MAX_ID, 0.0));
 
-  // Cluster sizes (number of original points in the cluster).
   std::vector<int> sz(MAX_ID, 0);
   for (int i = 0; i < N; ++i)
     sz[i] = 1;
 
-  // Active flag per cluster id.
   std::vector<char> active(MAX_ID, 0);
   for (int i = 0; i < N; ++i)
     active[i] = 1;
 
-  // Initialise upper triangle of D (and mirror to lower triangle).
   for (int i = 0; i < N; ++i) {
     for (int j = i + 1; j < N; ++j) {
       double d = euclidean(data[i], data[j]);
@@ -97,10 +78,8 @@ hac_average_link_matrix(const std::vector<std::vector<double>> &data) {
   int next_id = N;
   int n_active = N;
 
-  // Main loop: N-1 merges.
   while (n_active > 1) {
 
-    // ── Find globally closest pair by scanning the active submatrix ───
     double best_dist = std::numeric_limits<double>::infinity();
     int best_i = -1;
     int best_j = -1;
@@ -122,12 +101,9 @@ hac_average_link_matrix(const std::vector<std::vector<double>> &data) {
 
     assert(best_i != -1 && best_j != -1);
 
-    // ── Merge best_i and best_j into a new cluster k ──────────────────
     const int k = next_id++;
     sz[k] = sz[best_i] + sz[best_j];
 
-    // Lance-Williams update for average linkage:
-    //   D[k][m] = (|i|·D[i][m] + |j|·D[j][m]) / (|i| + |j|)
     for (int m = 0; m < k; ++m) {
       if (!active[m] || m == best_i || m == best_j)
         continue;
@@ -141,7 +117,7 @@ hac_average_link_matrix(const std::vector<std::vector<double>> &data) {
     active[best_i] = 0;
     active[best_j] = 0;
     active[k] = 1;
-    n_active -= 1; // removed 2, added 1
+    n_active -= 1;
   }
 
   return dendrogram;
