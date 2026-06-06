@@ -177,7 +177,7 @@ std::vector<merge_step> single_link_baseline(const std::vector<std::vector<doubl
                 int old_closest = closest_cluster[current_cluster];
 
                 if (old_closest == cluster_a || old_closest == cluster_b) {
-                    closest_cluster[current_cluster] = closest_alive_cluster(current_cluster, alive, distances);
+                    closest_cluster[current_cluster] = new_cluster;
                 } else {
                     double old_distance = distances[current_cluster][old_closest];
                     double distance_to_new = distances[current_cluster][new_cluster];

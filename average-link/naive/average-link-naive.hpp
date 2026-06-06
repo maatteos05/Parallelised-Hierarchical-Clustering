@@ -1,11 +1,4 @@
 #pragma once
-// ─────────────────────────────────────────────────────────────────────────────
-// Parameters:
-//   data       — N data points (each a vector<double>, any dimension)
-//   n_threads  — number of worker threads (includes the calling thread)
-//
-// Returns the dendrogram as a vector of MergeEvent
-// ─────────────────────────────────────────────────────────────────────────────
 
 #include "../sequential/average-link-matrix-seq.hpp"
 
