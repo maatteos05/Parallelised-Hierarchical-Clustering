@@ -317,7 +317,7 @@ void write_dendrogram_csv(const std::vector<merge_step>& dendrogram, const std::
 
 int main(int argc, char** argv) {
     if (argc != 4) {
-        std::cerr << "Usage: ./hac_single_mst <input.csv> <output.csv> <threads>\n";
+        std::cerr << "Usage: ./single_link_mst <input.csv> <output.csv> <threads>\n";
         return 1;
     }
 

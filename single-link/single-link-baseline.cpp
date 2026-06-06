@@ -207,7 +207,7 @@ void write_dendrogram_csv(const std::vector<merge_step>& dendrogram, const std::
 
 int main(int argc, char** argv) {
     if (argc != 3) {
-        std::cerr << "Usage: ./hac_single_baseline <input.csv> <output.csv>\n";
+        std::cerr << "Usage: ./single_link_baseline <input.csv> <output.csv>\n";
         return 1;
     }
 
