@@ -409,6 +409,35 @@ def plot_family_real(family: str, df: pd.DataFrame, df_sp: pd.DataFrame) -> None
     fig.savefig(PLOTS_DIR / f"{prefix}_real_time_per_dataset.png",
                 dpi=150, bbox_inches="tight")
     plt.close(fig)
+
+    # Speedup vs dataset size at the largest thread count: one line per
+    # parallel algorithm, x-axis is n_points so the size scaling story is
+    # visible. Markers are annotated with the dataset name for context.
+    fig, ax = plt.subplots(figsize=(8, 5))
+    for algo in cfg["parallel"]:
+        sub = (df_sp[(df_sp["algo"] == algo) &
+                     (df_sp["n_threads"] == max_t)]
+               .sort_values("n_points"))
+        if sub.empty:
+            continue
+        ax.plot(sub["n_points"], sub["speedup"], marker="o",
+                color=colors.get(algo),
+                label=f"{labels.get(algo, algo)} (t={max_t})")
+        # Annotate each point with the dataset name.
+        for _, row in sub.iterrows():
+            ax.annotate(row["dataset"],
+                        (row["n_points"], row["speedup"]),
+                        textcoords="offset points", xytext=(5, 5),
+                        fontsize=8, color="0.3")
+    ax.axhline(1, color="k", linestyle="--", linewidth=0.8, label="Sequential")
+    ax.set_xlabel("Dataset size (N points)")
+    ax.set_ylabel(f"Speedup vs sequential (t={max_t})")
+    ax.set_title(f"{cfg['title']} — real datasets, speedup vs dataset size")
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    fig.savefig(PLOTS_DIR / f"{prefix}_real_speedup_vs_size.png",
+                dpi=150, bbox_inches="tight")
+    plt.close(fig)
     print(f"Real-dataset plots → {PLOTS_DIR}")
 
 
