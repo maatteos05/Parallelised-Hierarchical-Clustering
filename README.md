@@ -4,9 +4,12 @@ Team: Matteo Sainton, Mateo Fatas, Emeric Payer
 
 This repository implements and benchmarks parallel hierarchical agglomerative clustering (HAC) algorithms:
 
-- Single-link, parallelized through a minimum spanning tree (MST) / Boruvka-style construction, following Olson (1995) in a CPU multithreaded setting.
-- Average-link, parallelized with a thread-parallel distance matrix approach, also following Olson (1995).
-- Average-link with pPOP, using the partially overlapping partitioning scheme from Dash, Petrutiu and Scheuermann (2007).
+- Single-link:
+  - following Olson (1995) in a CPU multithreaded setting
+  - parallelized through a minimum spanning tree (MST) / Boruvka-style construction
+- Average-link:
+  - parallelized with a thread-parallel distance matrix approach, also following Olson (1995)
+  - with pPOP, using the partially overlapping partitioning scheme from Dash, Petrutiu and Scheuermann (2007)
 
 Sequential baselines are provided for both linkage criteria. The implementations are in C++ and use `std::thread`-based primitives. Benchmarks use synthetic 2-D clustered datasets and measure runtime and speedup as thread count changes.
 
