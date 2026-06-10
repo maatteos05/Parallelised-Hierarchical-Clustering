@@ -60,7 +60,7 @@ All commands below are run from the repository root.
 
 Use `DATASET_NAME` as the dataset file stem without `.csv`, for example `test_100`.
 
-Generate synthetic clustered 2-D data:
+#### Generate synthetic clustered 2-D data:
 
 ```sh
 python scripts/generate_data.py --n N_POINTS --k N_CLUSTERS --out data/DATASET_NAME.csv
@@ -74,7 +74,7 @@ python scripts/generate_data.py --n 100 --k 4 --out data/test_100.csv
 python scripts/generate_data.py --n 100 --k 4 --seed 42 --out data/test_100.csv
 ```
 
-Run single-link:
+#### Run single-link:
 
 ```sh
 ./single-link/single_link_baseline \
@@ -96,7 +96,7 @@ Example:
 
 The last argument to `single_link_mst` is the thread count.
 
-Run average-link:
+#### Run average-link:
 
 ```sh
 ./average-link/hac_seq \
@@ -122,7 +122,7 @@ Example:
   data/test_100.csv results/dendrograms/average-link/ppop_test_100.csv 4
 ```
 
-Program arguments:
+#### Program arguments:
 
 ```sh
 ./single-link/single_link_baseline <input.csv> <output.csv>
@@ -135,25 +135,9 @@ Program arguments:
 
 Each program prints wall-clock time to stdout.
 
-If running from inside `single-link/` instead of the root:
-
-```sh
-./single_link_baseline ../data/DATASET_NAME.csv ../results/dendrograms/single-link/baseline_DATASET_NAME.csv
-./single_link_mst ../data/DATASET_NAME.csv ../results/dendrograms/single-link/mst_DATASET_NAME.csv N_THREADS
-python ../scripts/validate.py --no-run --input ../data/DATASET_NAME.csv --family single
-```
-
-Example:
-
-```sh
-./single_link_baseline ../data/test_100.csv ../results/dendrograms/single-link/baseline_test_100.csv
-./single_link_mst ../data/test_100.csv ../results/dendrograms/single-link/mst_test_100.csv 4
-python ../scripts/validate.py --no-run --input ../data/test_100.csv --family single
-```
-
 ## Validation And Visualization
 
-Check correctness against baselines and Python references:
+#### Check correctness against baselines and Python references:
 
 ```sh
 python scripts/validate.py --input data/DATASET_NAME.csv
@@ -171,7 +155,7 @@ Useful options:
 - `--threads N_THREADS`
 - `--no-run`, to validate existing dendrograms without regenerating them
 
-Render an ASCII dendrogram:
+#### Render an ASCII dendrogram:
 
 ```sh
 python scripts/visualize_dendrogram.py \
@@ -187,7 +171,7 @@ python scripts/visualize_dendrogram.py \
 
 The output is written to `results/visual/DENDROGRAM_VISUALIZATION_NAME.txt`.
 
-Plot cluster colourings by cutting a dendrogram after `n - K_CLUSTERS` merges:
+#### Plot cluster colourings by cutting a dendrogram after `n - K_CLUSTERS` merges:
 
 ```sh
 python scripts/plot_clusters.py --input data/DATASET_NAME.csv --k K_CLUSTERS
@@ -213,13 +197,13 @@ Cluster plots are written to `results/plots/visualizations/clusters_<stem>_k<k>_
 
 ## Benchmarks
 
-Run all benchmark families:
+#### Run all benchmark families:
 
 ```sh
 python scripts/benchmark.py
 ```
 
-Run one family:
+#### Run one family:
 
 ```sh
 python scripts/benchmark.py --family single
@@ -228,7 +212,7 @@ python scripts/benchmark.py --family average
 
 Benchmark scripts write CSVs to `results/benchmarks/` and figures to `results/plots/analysis/`. They require `pandas` and `matplotlib`.
 
-Regenerate benchmark and cluster plots:
+#### Regenerate benchmark and cluster plots:
 
 ```sh
 python scripts/benchmark.py
@@ -247,28 +231,3 @@ Main benchmark outputs:
 - `results/benchmarks/single_link_results.csv`
 - `results/benchmarks/average_link_results.csv`
 - speedup tables and figures under `results/plots/analysis/`
-
-## Implementation Notes
-
-Single-link files:
-
-- `single-link/baseline_olson_matrix.cpp`: sequential baseline following Olson's matrix-based idea instead of recomputing every point distance at every merge.
-- `single-link/parallel_mst.cpp`: parallel version using the fact that single-link HAC can be recovered from an MST, built with a threaded Boruvka-style approach.
-
-Single-link test flow:
-
-```sh
-python scripts/generate_data.py --n N_POINTS --k N_CLUSTERS --out data/DATASET_NAME.csv
-./single-link/single_link_baseline data/DATASET_NAME.csv results/dendrograms/single-link/baseline_DATASET_NAME.csv
-./single-link/single_link_mst data/DATASET_NAME.csv results/dendrograms/single-link/mst_DATASET_NAME.csv N_THREADS
-python scripts/validate.py --no-run --input data/DATASET_NAME.csv --family single
-```
-
-Example:
-
-```sh
-python scripts/generate_data.py --n 100 --k 4 --out data/test_100.csv
-./single-link/single_link_baseline data/test_100.csv results/dendrograms/single-link/baseline_test_100.csv
-./single-link/single_link_mst data/test_100.csv results/dendrograms/single-link/mst_test_100.csv 4
-python scripts/validate.py --no-run --input data/test_100.csv --family single
-```
