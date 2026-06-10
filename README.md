@@ -13,13 +13,6 @@ This repository implements and benchmarks parallel hierarchical agglomerative cl
 
 Sequential baselines are provided for both linkage criteria. The implementations are in C++ and use `std::thread`-based primitives. Benchmarks use synthetic 2-D clustered datasets and measure runtime and speedup as thread count changes.
 
-## Contributions
-
-- Emeric Payer: sequential baseline and parallel single-link MST implementation.
-- Mateo Fatas: naive parallel average-link implementation.
-- Matteo Sainton: pPOP implementation on top of average-link.
-- Common: data generation, validation, visualization, and benchmarking scripts.
-
 ## Repository Layout
 
 | Path | Purpose |
@@ -231,3 +224,64 @@ Main benchmark outputs:
 - `results/benchmarks/single_link_results.csv`
 - `results/benchmarks/average_link_results.csv`
 - speedup tables and figures under `results/plots/analysis/`
+
+## Run Everything From Scratch
+
+Clean and rebuild the project, then run validations, cluster plots, small ASCII dendrograms, and benchmarks using the datasets already present in `data/`.
+
+```sh
+make clean
+make
+
+THREAD_COUNTS="1 2 4 8 16"
+
+for DATASET_PATH in data/*.csv; do
+  DATASET_NAME="$(basename "$DATASET_PATH" .csv)"
+
+  for N_THREADS in $THREAD_COUNTS; do
+    echo "Validating ${DATASET_NAME} with ${N_THREADS} threads"
+    python scripts/validate.py \
+      --input "$DATASET_PATH" \
+      --threads "$N_THREADS"
+  done
+done
+
+declare -A K_BY_DATASET=(
+  [test_100]=4
+  [test_3blobs]=3
+  [bench_500]=10
+  [bench_1000]=10
+  [bench_2000]=10
+  [bench_5000]=10
+  [bench_50000]=5
+  [real_flame]=2
+  [real_R15]=15
+  [real_aggregation]=7
+  [real_D31]=31
+  [real_pathbased]=3
+  [real_t4_8k]=6
+)
+
+for DATASET_NAME in "${!K_BY_DATASET[@]}"; do
+  echo "Plotting ${DATASET_NAME} at k=${K_BY_DATASET[$DATASET_NAME]}"
+  python scripts/plot_clusters.py \
+    --input "data/${DATASET_NAME}.csv" \
+    --k "${K_BY_DATASET[$DATASET_NAME]}" \
+    --family all
+done
+
+for DATASET_NAME in test_100 test_3blobs; do
+  python scripts/visualize_dendrogram.py \
+    "results/dendrograms/average-link/ppop_${DATASET_NAME}.csv" \
+    "${DATASET_NAME}_ppop_vis.txt"
+done
+
+python scripts/benchmark.py --datasets both
+```
+
+## Contributions
+
+- Emeric Payer: sequential baseline and parallel single-link MST implementation.
+- Mateo Fatas: naive parallel average-link implementation.
+- Matteo Sainton: pPOP implementation on top of average-link.
+- Common: data generation, validation, visualization, and benchmarking scripts.
