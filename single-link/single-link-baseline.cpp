@@ -167,7 +167,7 @@ std::vector<merge_step> single_link_baseline(const std::vector<std::vector<doubl
 
         next_alive_clusters.push_back(new_cluster);
         alive = next_alive_clusters;
-
+i'm actually a bit confused. when we are adding cluster n, we do have to modify the distance of itself with the previous 
         closest_cluster[new_cluster] = closest_alive_cluster(new_cluster, alive, distances);
 
         for (int i = 0; i < static_cast<int>(alive.size()); i++) {
