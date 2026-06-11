@@ -16,7 +16,7 @@ PLOTS_DIR = RESULTS_DIR / "plots" / "analysis"
 BENCHMARKS_DIR = RESULTS_DIR / "benchmarks"
 GENERATE_SCRIPT = REPO_ROOT / "scripts" / "generate_data.py"
 
-DATASET_SIZES = [500, 1000, 2000, 5000]
+DATASET_SIZES = [500, 1000, 2000, 5000, 10000]
 THREAD_COUNTS = [1, 2, 4, 8]
 N_CLUSTERS = 10
 N_RUNS = 3
@@ -25,10 +25,13 @@ N_RUNS = 3
 # "02. Synthetic"), pre-fetched into data/ and converted to headerless x,y CSV.
 # Ordered ascending by point count.
 REAL_DATASETS = [
+    ("test_100",    DATA_DIR / "test_100.csv"),
+    ("test_3blobs", DATA_DIR / "test_3blobs.csv"),
     ("flame",       DATA_DIR / "real_flame.csv"),
     ("R15",         DATA_DIR / "real_R15.csv"),
     ("aggregation", DATA_DIR / "real_aggregation.csv"),
     ("D31",         DATA_DIR / "real_D31.csv"),
+    ("t4_8k",       DATA_DIR / "real_t4_8k.csv"),
 ]
 
 FAMILIES = {

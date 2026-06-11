@@ -233,19 +233,6 @@ Clean and rebuild the project, then run validations, cluster plots, small ASCII 
 make clean
 make
 
-THREAD_COUNTS="1 2 4 8 16"
-
-for DATASET_PATH in data/*.csv; do
-  DATASET_NAME="$(basename "$DATASET_PATH" .csv)"
-
-  for N_THREADS in $THREAD_COUNTS; do
-    echo "Validating ${DATASET_NAME} with ${N_THREADS} threads"
-    python scripts/validate.py \
-      --input "$DATASET_PATH" \
-      --threads "$N_THREADS"
-  done
-done
-
 declare -A K_BY_DATASET=(
   [test_100]=4
   [test_3blobs]=3
@@ -253,7 +240,7 @@ declare -A K_BY_DATASET=(
   [bench_1000]=10
   [bench_2000]=10
   [bench_5000]=10
-  [bench_50000]=5
+  [bench_10000]=4
   [real_flame]=2
   [real_R15]=15
   [real_aggregation]=7
@@ -267,7 +254,8 @@ for DATASET_NAME in "${!K_BY_DATASET[@]}"; do
   python scripts/plot_clusters.py \
     --input "data/${DATASET_NAME}.csv" \
     --k "${K_BY_DATASET[$DATASET_NAME]}" \
-    --family all
+    --family all \
+    --run 
 done
 
 for DATASET_NAME in test_100 test_3blobs; do
